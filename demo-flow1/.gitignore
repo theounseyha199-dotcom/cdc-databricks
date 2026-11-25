@@ -1,0 +1,7 @@
+.env
+__pycache__/
+.obs-*/
+output/*
+logs/*
+screenshots/*
+!*/.gitkeep

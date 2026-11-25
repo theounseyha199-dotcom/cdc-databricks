@@ -1,0 +1,63 @@
+1
+00:00:00,499 --> 00:00:09,733
+សួស្ដីអ្នកទាំងអស់គ្នា។ នេះជាគម្រោង PostgreSQL to Data Lakehouse ដែលប្រើ Change Data Capture ដើម្បីបញ្ជូនទិន្នន័យទៅកាន់ Databricks Bronze Layer។
+
+2
+00:00:09,733 --> 00:00:22,933
+Debezium ប្រើ Logical Replication ដើម្បីអានការផ្លាស់ប្ដូរពី WAL។ Kafka រក្សាទុក CDC Events ហើយ Python បម្លែង និងសរសេរទិន្នន័យចូល Delta Lake។
+
+3
+00:00:22,933 --> 00:00:36,166
+Docker Compose ដំណើរការ Kafka, Debezium Connect និង Kafbat UI។ ស្ថានភាព RUNNING បញ្ជាក់ថា Connector និង Task កំពុងដំណើរការ។
+
+4
+00:00:36,166 --> 00:00:48,399
+នៅក្នុង Kafbat UI យើងអាចមើល Topic postgres.public.users និង Offset សម្រាប់ Partition នីមួយៗ។
+
+5
+00:00:48,399 --> 00:01:03,633
+ព្រឹត្តិការណ៍ op = r ជាទិន្នន័យដែល Debezium បានអានក្នុង Initial Snapshot។ Kafka នៅតែរក្សាទុកព្រឹត្តិការណ៍ទាំងនេះ។
+
+6
+00:01:03,633 --> 00:01:15,833
+Python Consumer ទទួល CDC Events ពី Kafka ហើយបម្លែង JSON ពី Bytes ទៅជា Python Object។
+
+7
+00:01:15,833 --> 00:01:29,066
+Transformation យក after សម្រាប់ Snapshot, Insert និង Update ហើយយក before សម្រាប់ Delete។
+
+8
+00:01:29,066 --> 00:01:42,299
+Bronze Writer ប្រើ SQL MERGE ដោយផ្គូផ្គង Kafka Topic, Partition និង Offset ដើម្បីការពារ Event ស្ទួន។
+
+9
+00:01:42,299 --> 00:01:55,533
+Consumer Commit Offset បន្ទាប់ពី MERGE ជោគជ័យ។ Committed Offset សម្គាល់ Offset បន្ទាប់ដែលត្រូវអាន។
+
+10
+00:01:55,533 --> 00:02:09,733
+យើងប្រើ Databricks SQL ដើម្បីរាប់ទិន្នន័យនៅក្នុង Bronze Table និងផ្ទៀងផ្ទាត់ថា SQL Warehouse ឆ្លើយតប។
+
+11
+00:02:09,733 --> 00:02:22,966
+Debezium ចាប់យក INSERT ពី PostgreSQL ជា op = c។ Python បម្លែង Event និងសរសេរចូល Databricks Bronze។
+
+12
+00:02:22,966 --> 00:02:36,199
+UPDATE បង្កើត Event ថ្មីដែលមាន op = u។ Bronze Layer រក្សាទុកទាំង Event ចាស់ និង Event ថ្មី។
+
+13
+00:02:36,199 --> 00:02:49,433
+DELETE បង្កើត Event ដែលមាន op = d។ Consumer រំលង Tombstone ដែលមាន Value ស្មើ null ហើយ Commit Offset របស់វា។
+
+14
+00:02:49,433 --> 00:03:03,633
+យើងពិនិត្យរក Event ស្ទួនដោយប្រើ Kafka Topic, Partition និង Offset។ សំណួរ SQL គួរតែត្រឡប់លទ្ធផលសូន្យជួរ។
+
+15
+00:03:03,633 --> 00:03:17,866
+នៅពេល Consumer ចាប់ផ្ដើមឡើងវិញ វាអានបន្តពី Committed Offset។ Kafka អាចរក្សាទុក Events ខណៈ Consumer ឈប់ដំណើរការ។
+
+16
+00:03:17,866 --> 00:03:31,800
+Flow 1 បង្ហាញ CDC Transformation, Duplicate Prevention និង Manual Offset Commit។ សូមអរគុណ។

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1580 490" role="img" aria-label="PostgreSQL writes changes to WAL. Debezium streams them to Kafka. Python consumes, transforms and merges them into Delta Lake.">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#41d7bc"/></marker>
+    <style>
+      .node{fill:#142438;stroke:#2c465e;stroke-width:2}.final{fill:#173746;stroke:#41d7bc;stroke-width:2}
+      .title{fill:#f5f8fc;font:bold 34px sans-serif}.label{fill:#a9bcd1;font:24px sans-serif}
+      .link{fill:none;stroke:#41d7bc;stroke-width:4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <g text-anchor="middle">
+    <path class="link" d="M312 106H418"/><path class="link" d="M708 106H814"/><path class="link" d="M1104 106H1210"/>
+    <path class="link" d="M1353 170V310"/><path class="link" d="M1210 385H1104"/><path class="link" d="M814 385H708"/><path class="link" d="M418 385H312"/>
+    <rect class="node" x="22" y="42" width="290" height="128" rx="19"/><text class="title" x="167" y="98">PostgreSQL</text><text class="label" x="167" y="136">public.users</text>
+    <rect class="node" x="418" y="42" width="290" height="128" rx="19"/><text class="title" x="563" y="98">WAL</text><text class="label" x="563" y="136">Logical replication</text>
+    <rect class="node" x="814" y="42" width="290" height="128" rx="19"/><text class="title" x="959" y="98">Debezium</text><text class="label" x="959" y="136">Snapshot and CDC</text>
+    <rect class="node" x="1210" y="42" width="290" height="128" rx="19"/><text class="title" x="1355" y="98">Apache Kafka</text><text class="label" x="1355" y="136">Events and offsets</text>
+    <rect class="node" x="1210" y="321" width="290" height="128" rx="19"/><text class="title" style="font-size:30px" x="1355" y="378">Python Consumer</text><text class="label" x="1355" y="416">Decode JSON</text>
+    <rect class="node" x="814" y="321" width="290" height="128" rx="19"/><text class="title" x="959" y="378">Transformation</text><text class="label" x="959" y="416">Map r / c / u / d</text>
+    <rect class="node" x="418" y="321" width="290" height="128" rx="19"/><text class="title" x="563" y="378">Bronze Writer</text><text class="label" x="563" y="416">MERGE event key</text>
+    <rect class="final" x="22" y="321" width="290" height="128" rx="19"/><text class="title" x="167" y="378">Delta Lake</text><text class="label" x="167" y="416">Databricks Bronze</text>
+  </g>
+</svg>

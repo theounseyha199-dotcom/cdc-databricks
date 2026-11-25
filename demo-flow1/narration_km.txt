@@ -1,0 +1,47 @@
+[intro]
+សួស្ដីអ្នកទាំងអស់គ្នា។ នេះជាគម្រោង PostgreSQL to Data Lakehouse ដែលប្រើ Change Data Capture ដើម្បីបញ្ជូនទិន្នន័យទៅកាន់ Databricks Bronze Layer។
+
+[architecture]
+Debezium ប្រើ Logical Replication ដើម្បីអានការផ្លាស់ប្ដូរពី WAL។ Kafka រក្សាទុក CDC Events ហើយ Python បម្លែង និងសរសេរទិន្នន័យចូល Delta Lake។
+
+[infrastructure]
+Docker Compose ដំណើរការ Kafka, Debezium Connect និង Kafbat UI។ ស្ថានភាព RUNNING បញ្ជាក់ថា Connector និង Task កំពុងដំណើរការ។
+
+[kafbat]
+នៅក្នុង Kafbat UI យើងអាចមើល Topic postgres.public.users និង Offset សម្រាប់ Partition នីមួយៗ។
+
+[snapshot]
+ព្រឹត្តិការណ៍ op = r ជាទិន្នន័យដែល Debezium បានអានក្នុង Initial Snapshot។ Kafka នៅតែរក្សាទុកព្រឹត្តិការណ៍ទាំងនេះ។
+
+[consumer]
+Python Consumer ទទួល CDC Events ពី Kafka ហើយបម្លែង JSON ពី Bytes ទៅជា Python Object។
+
+[transform]
+Transformation យក after សម្រាប់ Snapshot, Insert និង Update ហើយយក before សម្រាប់ Delete។
+
+[merge]
+Bronze Writer ប្រើ SQL MERGE ដោយផ្គូផ្គង Kafka Topic, Partition និង Offset ដើម្បីការពារ Event ស្ទួន។
+
+[commit]
+Consumer Commit Offset បន្ទាប់ពី MERGE ជោគជ័យ។ Committed Offset សម្គាល់ Offset បន្ទាប់ដែលត្រូវអាន។
+
+[baseline]
+យើងប្រើ Databricks SQL ដើម្បីរាប់ទិន្នន័យនៅក្នុង Bronze Table និងផ្ទៀងផ្ទាត់ថា SQL Warehouse ឆ្លើយតប។
+
+[insert]
+Debezium ចាប់យក INSERT ពី PostgreSQL ជា op = c។ Python បម្លែង Event និងសរសេរចូល Databricks Bronze។
+
+[update]
+UPDATE បង្កើត Event ថ្មីដែលមាន op = u។ Bronze Layer រក្សាទុកទាំង Event ចាស់ និង Event ថ្មី។
+
+[delete]
+DELETE បង្កើត Event ដែលមាន op = d។ Consumer រំលង Tombstone ដែលមាន Value ស្មើ null ហើយ Commit Offset របស់វា។
+
+[quality]
+យើងពិនិត្យរក Event ស្ទួនដោយប្រើ Kafka Topic, Partition និង Offset។ សំណួរ SQL គួរតែត្រឡប់លទ្ធផលសូន្យជួរ។
+
+[recovery]
+នៅពេល Consumer ចាប់ផ្ដើមឡើងវិញ វាអានបន្តពី Committed Offset។ Kafka អាចរក្សាទុក Events ខណៈ Consumer ឈប់ដំណើរការ។
+
+[conclusion]
+Flow 1 បង្ហាញ CDC Transformation, Duplicate Prevention និង Manual Offset Commit។ សូមអរគុណ។

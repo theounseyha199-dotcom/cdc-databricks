@@ -1,0 +1,49 @@
+import json
+from kafka import KafkaConsumer
+
+consumer = KafkaConsumer(
+    "postgres.public.users",
+    bootstrap_servers="localhost:29092",
+    auto_offset_reset="earliest",
+    group_id="flow1-python-test",
+    enable_auto_commit=False,
+    value_deserializer=lambda value: (
+        json.loads(value.decode("utf-8"))
+        if value is not None
+        else None
+    ),
+)
+
+print("Listening for PostgreSQL CDC events...")
+
+try:
+    for message in consumer:
+        event = message.value
+
+        if event is None:
+            print(f"TOMBSTONE | offset={message.offset}")
+            continue
+
+        payload = event.get("payload") or {}
+        operation = payload.get("op")
+
+        if operation in ("c", "r", "u"):
+            row = payload.get("after")
+        elif operation == "d":
+            row = payload.get("before")
+        else:
+            print(f"UNKNOWN EVENT | op={operation}")
+            continue
+
+        print(
+            f"OP={operation} | "
+            f"OFFSET={message.offset} | "
+            f"DATA={json.dumps(row, ensure_ascii=False)}",
+            flush=True,
+        )
+
+except KeyboardInterrupt:
+    print("\nConsumer stopped.")
+
+finally:
+    consumer.close()

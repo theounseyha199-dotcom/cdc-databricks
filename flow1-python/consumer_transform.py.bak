@@ -1,0 +1,69 @@
+import argparse
+import json
+from contextlib import nullcontext
+
+from kafka import KafkaConsumer
+from kafka.structs import OffsetAndMetadata, TopicPartition
+
+from bronze_writer import open_bronze_writer
+from config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_GROUP_ID, KAFKA_TOPIC
+from transform import transform_cdc_event
+
+
+def consume(consumer, write):
+    for message in consumer:
+        if message.value is None:
+            print(f"TOMBSTONE SKIPPED | OFFSET={message.offset}")
+        else:
+            event = json.loads(message.value.decode("utf-8"))
+            record = transform_cdc_event(
+                event=event,
+                kafka_offset=message.offset,
+                kafka_partition=message.partition,
+            )
+            if record is None:
+                print("Unsupported or empty CDC event")
+            else:
+                record["kafka_topic"] = message.topic
+                if write is None:
+                    print("\n=== TRANSFORMED RECORD ===")
+                    print(json.dumps(record, indent=4, ensure_ascii=False), flush=True)
+                else:
+                    write(record)
+                    print(
+                        f"BRONZE PROCESSED | PARTITION={message.partition} | OFFSET={message.offset}",
+                        flush=True,
+                    )
+
+        if write is not None:
+            partition = TopicPartition(message.topic, message.partition)
+            consumer.commit({partition: OffsetAndMetadata(message.offset + 1, "", -1)})
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--write-bronze", action="store_true", help="Write events to Databricks.")
+    args = parser.parse_args()
+    writer = open_bronze_writer() if args.write_bronze else nullcontext()
+    try:
+        with writer as write:
+            consumer = KafkaConsumer(
+                KAFKA_TOPIC,
+                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+                auto_offset_reset="earliest",
+                group_id=KAFKA_GROUP_ID,
+                enable_auto_commit=False,
+            )
+            try:
+                print(f"Listening for PostgreSQL CDC events on {KAFKA_TOPIC}...", flush=True)
+                consume(consumer, write)
+            finally:
+                consumer.close()
+    except KeyboardInterrupt:
+        print("\nConsumer stopped.")
+    except ValueError as error:
+        raise SystemExit(str(error)) from None
+
+
+if __name__ == "__main__":
+    main()
